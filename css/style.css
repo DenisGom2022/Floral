@@ -33,7 +33,6 @@ body {
     text-decoration: none;
     border-radius: 6px;
     font-weight: 500;
-    transition: all 0.3s ease;
     border: none;
     cursor: pointer;
     text-align: center;
@@ -129,13 +128,11 @@ body {
     font-size: 1.1rem;
     padding: 10px 20px;
     border-radius: 25px;
-    transition: all 0.3s ease;
     position: relative;
 }
 
 .main-nav a:hover {
     color: #2d5a27;
-    background: rgba(45, 90, 39, 0.1);
 }
 
 .main-nav a.active {
@@ -149,7 +146,6 @@ body {
     position: absolute;
     top: -5px;
     left: 50%;
-    transform: translateX(-50%);
     width: 6px;
     height: 6px;
     background: #4a7c59;
@@ -200,11 +196,11 @@ body {
     gap: 30px;
 }
 
+/* Eliminar reglas duplicadas de navegación */
 .main-nav a {
     text-decoration: none;
     color: #333;
     font-weight: 500;
-    transition: color 0.3s ease;
 }
 
 .main-nav a:hover {
@@ -308,13 +304,9 @@ body {
     text-align: center;
     padding: 30px 20px;
     border-radius: 8px;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.service-item:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-}
+/* Empty hover selectors removed */
 
 .service-icon {
     width: 80px;
@@ -411,7 +403,6 @@ body {
 .footer-section a {
     color: #ccc;
     text-decoration: none;
-    transition: color 0.3s ease;
 }
 
 .footer-section a:hover {
@@ -526,13 +517,9 @@ body {
                       radial-gradient(circle at 40% 20%, rgba(255,255,255,0.1) 2px, transparent 2px);
     background-size: 50px 50px, 60px 60px, 40px 40px;
     opacity: 0.3;
-    animation: floatBackground 20s ease-in-out infinite;
 }
 
-@keyframes floatBackground {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-10px); }
-}
+/* Keyframes removed - animations disabled */
 
 .hero-content {
     display: grid;
@@ -543,9 +530,7 @@ body {
     z-index: 2;
 }
 
-.hero-text {
-    animation: slideInLeft 1s ease-out;
-}
+/* Empty hero text class removed */
 
 .hero-title {
     font-family: 'Playfair Display', serif;
@@ -577,12 +562,9 @@ body {
     border-radius: 15px;
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255,255,255,0.2);
-    transition: transform 0.3s ease;
 }
 
-.stat-item:hover {
-    transform: translateY(-5px);
-}
+/* Empty hover selectors removed */
 
 .stat-number {
     display: block;
@@ -600,7 +582,6 @@ body {
 .hero-visual {
     position: relative;
     height: 400px;
-    animation: slideInRight 1s ease-out;
 }
 
 .floating-elements {
@@ -620,7 +601,6 @@ body {
     justify-content: center;
     font-size: 2rem;
     color: #a8d5a8;
-    animation: float 6s ease-in-out infinite;
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.2);
     box-shadow: 0 8px 32px rgba(0,0,0,0.1);
@@ -629,36 +609,19 @@ body {
 .flower-1 {
     top: 20%;
     left: 20%;
-    animation-delay: 0s;
 }
 
 .flower-2 {
     top: 60%;
     left: 60%;
-    animation-delay: 2s;
 }
 
 .flower-3 {
     top: 40%;
     left: 80%;
-    animation-delay: 4s;
 }
 
-@keyframes float {
-    0%, 100% { transform: translateY(0px) rotate(0deg); }
-    33% { transform: translateY(-20px) rotate(5deg); }
-    66% { transform: translateY(10px) rotate(-3deg); }
-}
-
-@keyframes slideInLeft {
-    from { opacity: 0; transform: translateX(-50px); }
-    to { opacity: 1; transform: translateX(0); }
-}
-
-@keyframes slideInRight {
-    from { opacity: 0; transform: translateX(50px); }
-    to { opacity: 1; transform: translateX(0); }
-}
+/* All keyframes removed - animations disabled */
 
 /* Search Section Enhanced */
 .search-section {
@@ -733,7 +696,6 @@ body {
     align-items: center;
     gap: 25px;
     box-shadow: 0 8px 25px rgba(0,0,0,0.08);
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     position: relative;
     border: 1px solid rgba(45, 90, 39, 0.1);
     overflow: hidden;
@@ -755,7 +717,6 @@ body {
 }
 
 .stat-card:hover {
-    transform: translateY(-10px) scale(1.02);
     box-shadow: 0 15px 35px rgba(45, 90, 39, 0.15);
     border-color: rgba(45, 90, 39, 0.2);
 }
@@ -768,12 +729,10 @@ body {
     background: linear-gradient(135deg, rgba(45, 90, 39, 0.1), rgba(45, 90, 39, 0.05));
     padding: 15px;
     border-radius: 15px;
-    transition: all 0.3s ease;
 }
 
 .stat-card:hover i {
     background: linear-gradient(135deg, rgba(45, 90, 39, 0.15), rgba(45, 90, 39, 0.1));
-    transform: scale(1.1);
 }
 
 .stat-info {
@@ -803,6 +762,12 @@ body {
 .stat-card:hover .stat-text {
     color: #555;
 }
+
+.stat-number {
+    display: block;
+    font-size: 2rem;
+    font-weight: 700;
+    color: #2d5a27;
     margin-bottom: 5px;
 }
 
@@ -834,14 +799,9 @@ body {
     font-size: 5rem;
     color: rgba(45, 90, 39, 0.3);
     margin-bottom: 30px;
-    animation: bounce 2s infinite;
 }
 
-@keyframes bounce {
-    0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
-    40% { transform: translateY(-20px); }
-    60% { transform: translateY(-10px); }
-}
+/* Bounce keyframes removed - animations disabled */
 
 .no-results h3 {
     margin-bottom: 15px;
@@ -886,7 +846,6 @@ body {
     border-radius: 20px;
     box-shadow: 0 8px 25px rgba(0,0,0,0.1);
     overflow: hidden;
-    transition: all 0.4s ease;
     position: relative;
 }
 
@@ -899,7 +858,6 @@ body {
     height: 4px;
     background: linear-gradient(90deg, #2d5a27, #4a7c59);
     transform: scaleX(0);
-    transition: transform 0.3s ease;
 }
 
 .flower-card:hover::before {
@@ -907,7 +865,6 @@ body {
 }
 
 .flower-card:hover {
-    transform: translateY(-10px);
     box-shadow: 0 15px 35px rgba(0,0,0,0.15);
 }
 
@@ -919,7 +876,6 @@ body {
     padding: 15px;
     font-weight: 600;
     border-radius: 10px;
-    transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
 }
@@ -943,7 +899,6 @@ body {
     background: linear-gradient(135deg, #1e3d1c, #2d5a27);
     color: white;
     text-decoration: none;
-    transform: translateY(-2px);
 }
 
 /* Page Header */
@@ -977,7 +932,6 @@ body {
     border-radius: 20px;
     box-shadow: 0 8px 25px rgba(0,0,0,0.08);
     overflow: hidden;
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     position: relative;
     border: 1px solid rgba(45, 90, 39, 0.1);
 }
@@ -991,7 +945,6 @@ body {
     height: 4px;
     background: linear-gradient(90deg, #2d5a27, #4a7c59, #6ba86f);
     transform: scaleX(0);
-    transition: transform 0.3s ease;
     z-index: 1;
 }
 
@@ -1000,7 +953,6 @@ body {
 }
 
 .flower-card:hover {
-    transform: translateY(-15px) scale(1.02);
     box-shadow: 0 20px 40px rgba(45, 90, 39, 0.15);
     border-color: rgba(45, 90, 39, 0.2);
 }
@@ -1016,12 +968,10 @@ body {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: all 0.4s ease;
     filter: brightness(1) saturate(1);
 }
 
 .flower-card:hover .flower-image img {
-    transform: scale(1.1);
     filter: brightness(1.1) saturate(1.2);
 }
 
@@ -1044,13 +994,9 @@ body {
     color: white;
     font-size: 2.5rem;
     text-shadow: 0 2px 10px rgba(0,0,0,0.3);
-    animation: pulse 2s infinite;
 }
 
-@keyframes pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-}
+/* Pulse keyframes removed - animations disabled */
 
 .flower-card:hover .image-overlay {
     opacity: 1;
@@ -1111,12 +1057,10 @@ body {
     margin-bottom: 15px;
     font-weight: 600;
     border: 1px solid rgba(45, 90, 39, 0.2);
-    transition: all 0.3s ease;
 }
 
 .flower-category:hover {
     background: linear-gradient(135deg, #d4edda, #c3e6cb);
-    transform: translateY(-2px);
 }
 
 .flower-category i {
@@ -1147,12 +1091,10 @@ body {
     border: 1px solid rgba(0,0,0,0.1);
     display: flex;
     align-items: center;
-    transition: all 0.3s ease;
 }
 
 .flower-specs .spec:hover {
     background: linear-gradient(135deg, #e9ecef, #dee2e6);
-    transform: translateY(-2px);
 }
 
 .flower-specs .spec i {
@@ -1185,7 +1127,6 @@ body {
     width: 100%;
     height: 100%;
     background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-    transition: left 0.5s ease;
 }
 
 .btn-detail:hover::before {
@@ -1196,13 +1137,14 @@ body {
     background: linear-gradient(135deg, #1e3d1c, #2d5a27);
     color: white;
     text-decoration: none;
-    transform: translateY(-3px);
     box-shadow: 0 8px 20px rgba(45, 90, 39, 0.3);
 }
 
 .btn-detail i {
     margin-right: 8px;
 }
+
+.flower-category {
     background: #e8f5e8;
     color: #2d5a27;
     padding: 4px 12px;

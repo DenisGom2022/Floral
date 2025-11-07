@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Form Preview</title>
+    <style>
+        body { 
+            font-family: 'Inter', sans-serif; 
+            margin: 20px; 
+            background: #f8f9fa; 
+        }
+        .search-form {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            border: 2px solid rgba(45, 90, 39, 0.1);
+        }
+        .search-container {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .search-input {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: white;
+        }
+        .search-input:focus {
+            outline: none;
+            border-color: #2d5a27;
+            box-shadow: 0 0 15px rgba(45, 90, 39, 0.1);
+        }
+        .search-btn {
+            padding: 15px 25px;
+            background: #2d5a27;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .search-btn:hover {
+            background: #1e3d1c;
+            transform: translateY(-2px);
+        }
+        .search-error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #f5c6cb;
+            font-family: monospace;
+            white-space: pre-wrap;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Vulnerable Search Form Preview</h1>
+    
+    <div class="search-form">
+        <form method="GET" action="">
+            <div class="search-container">
+                <input 
+                    type="text" 
+                    name="search" 
+                    class="search-input" 
+                    placeholder="Search for flowers... (Try: rose, tulip, or even SQL injection: ' OR 1=1 --)" 
+                    value=""
+                >
+                <button type="submit" class="search-btn">
+                    🔍 Search
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="search-error">
+        <strong>⚠️ Example SQL Error:</strong>
+        SQL Error: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near '' OR 1=1 -- %'' at line 1 (SQLSTATE: 42000, Code: 1064)
+        Query ejecutado: SELECT id, name, slug, description, short_description, price, wholesale_price, min_quantity, min_quantity_unit, stock_quantity, sku, image_url, featured, color, material, 'categoria' as category_name, 'slug' as category_slug FROM products WHERE name LIKE '%' OR 1=1 -- %'
+    </div>
+
+    <p><strong>Instructions for testing SQL Injection:</strong></p>
+    <ul>
+        <li><code>' OR 1=1 --</code> - Basic SQL injection that should return all records</li>
+        <li><code>' UNION SELECT 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17 --</code> - Union-based injection</li>
+        <li><code>' AND (SELECT COUNT(*) FROM information_schema.tables) > 0 --</code> - Test database access</li>
+        <li><code>rose'; DROP TABLE products; --</code> - Destructive injection (be careful!)</li>
+    </ul>
+</body>
+</html>
