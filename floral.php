@@ -1,12 +1,17 @@
 <?php
 session_start();
-require_once 'includes/database.php';
 
-// Inicializar managers de base de datos
-$productManager = new ProductManager();
-$categoryManager = new CategoryManager();
+// Add error reporting for debugging
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 
-// Obtener parámetros de filtrado
+// Default values
+$products = [];
+$categories = ['all' => 'All'];
+$totalProducts = 0;
+$errorMessage = '';
+
+// Get filter parameters
 $selectedCategory = $_GET['category'] ?? 'all';
 $searchTerm = $_GET['search'] ?? '';
 $sortBy = $_GET['sort'] ?? 'name';
@@ -14,70 +19,99 @@ $page = max(1, intval($_GET['page'] ?? 1));
 $perPage = 12;
 $offset = ($page - 1) * $perPage;
 
-// Variables para mostrar datos
-$products = [];
-$categories = [];
-$totalProducts = 0;
-$errorMessage = '';
-
-// Obtener categorías para el filtro
+// Try to load database and get data
 try {
-    $categoriesFromDB = $categoryManager->getAllCategories();
-    $categories = ['all' => 'All'];
-    foreach ($categoriesFromDB as $cat) {
-        $categories[$cat['slug']] = $cat['name'];
+    require_once 'includes/database.php';
+    
+    // Test database connection
+    $db = Database::getInstance();
+    
+    // Initialize managers
+    $productManager = new ProductManager();
+    $categoryManager = new CategoryManager();
+    
+    // Get categories
+    try {
+        $categoriesFromDB = $categoryManager->getAllCategories();
+        foreach ($categoriesFromDB as $cat) {
+            $categories[$cat['slug']] = $cat['name'];
+        }
+    } catch (Exception $e) {
+        $errorMessage .= "Categories error: " . $e->getMessage() . "\n";
     }
+    
+    // Get products
+    try {
+        if (!empty($searchTerm)) {
+            // Vulnerable search - show errors
+            $products = $productManager->searchProducts($searchTerm, $perPage);
+            $totalProducts = count($products);
+        } elseif ($selectedCategory !== 'all') {
+            // Filter by category
+            $products = $productManager->getProductsByCategory($selectedCategory, $perPage);
+            $totalProducts = $productManager->getProductCountByCategory($selectedCategory);
+        } else {
+            // All products
+            $products = $productManager->getAllProducts($perPage, $offset);
+            $totalProducts = $productManager->getProductCountByCategory();
+        }
+    } catch (Exception $e) {
+        $errorMessage .= "Products error: " . $e->getMessage() . "\n";
+    }
+    
 } catch (Exception $e) {
-    $errorMessage = "Error obteniendo categorías: " . $e->getMessage();
-    $categories = ['all' => 'All', 'roses' => 'Roses', 'hydrangeas' => 'Hydrangeas'];
+    $errorMessage = "Database connection error: " . $e->getMessage() . "\n\nPlease run setup-database.php first to create the database and tables.";
+    
+    // Fallback sample data
+    $categories = [
+        'all' => 'All',
+        'roses' => 'Roses',
+        'hydrangeas' => 'Hydrangeas',
+        'peonies' => 'Peonies'
+    ];
+    
+    $products = [
+        [
+            'id' => 1,
+            'name' => 'Sample Red Rose',
+            'description' => 'Sample product - database not connected',
+            'short_description' => 'Sample rose',
+            'price' => 45.99,
+            'stock_quantity' => 150,
+            'sku' => 'SAMPLE-001',
+            'image_url' => 'https://via.placeholder.com/400x400/ff6b6b/ffffff?text=Sample+Rose',
+            'color' => 'Red',
+            'material' => 'Silk',
+            'category_name' => 'Roses'
+        ]
+    ];
+    $totalProducts = 1;
 }
 
-// Obtener productos según filtros - MOSTRAR ERRORES SQL
-try {
-    if (!empty($searchTerm)) {
-        // Búsqueda VULNERABLE - mostrar errores
-        $products = $productManager->searchProducts($searchTerm, $perPage);
-        $totalProducts = count($products);
-    } elseif ($selectedCategory !== 'all') {
-        // Filtrar por categoría
-        $products = $productManager->getProductsByCategory($selectedCategory, $perPage);
-        $totalProducts = $productManager->getProductCountByCategory($selectedCategory);
-    } else {
-        // Todos los productos
-        $products = $productManager->getAllProducts($perPage, $offset);
-        $totalProducts = $productManager->getProductCountByCategory();
+// Apply sorting if necessary
+if (!empty($products) && is_array($products)) {
+    if ($sortBy === 'price-low') {
+        usort($products, function($a, $b) {
+            return ($a['price'] ?? 0) <=> ($b['price'] ?? 0);
+        });
+    } elseif ($sortBy === 'price-high') {
+        usort($products, function($a, $b) {
+            return ($b['price'] ?? 0) <=> ($a['price'] ?? 0);
+        });
+    } elseif ($sortBy === 'category') {
+        usort($products, function($a, $b) {
+            return strcmp($a['category_name'] ?? '', $b['category_name'] ?? '');
+        });
     }
-} catch (Exception $e) {
-    // MOSTRAR ERROR SQL COMPLETO EN PANTALLA
-    $errorMessage = "ERROR SQL: " . $e->getMessage() . "\n\nDetalles técnicos: " . $e->getFile() . " línea " . $e->getLine();
-    $products = [];
-    $totalProducts = 0;
 }
-// Aplicar ordenamiento si es necesario
-if ($sortBy === 'price-low') {
-    usort($products, function($a, $b) {
-        return $a['price'] <=> $b['price'];
-    });
-} elseif ($sortBy === 'price-high') {
-    usort($products, function($a, $b) {
-        return $b['price'] <=> $a['price'];
-    });
-} elseif ($sortBy === 'category') {
-    usort($products, function($a, $b) {
-        return strcmp($a['category_name'], $b['category_name']);
-    });
-}
-
-// Variables para el usuario logueado
-$isLoggedIn = isUserLoggedIn();
-$userDiscount = getUserDiscount();
+?>
 ?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Floral Products - USI Floral Imports</title>
+    <title>Floral Database Collection</title>
     <link rel="stylesheet" href="css/style.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -88,7 +122,7 @@ $userDiscount = getUserDiscount();
         <div class="header-top">
             <div class="container">
                 <div class="header-info">
-                    <span><i class="fas fa-business-time"></i> Wholesale Trade Only • Import & Export • B2B Industry Supplier</span>
+                    <span><i class="fas fa-leaf"></i> Premium Botanical Collection • Quality Silk Flowers • Professional Grade</span>
                     <span><i class="fas fa-clock"></i> Monday-Friday 9am-5pm PT</span>
                 </div>
             </div>
@@ -98,7 +132,7 @@ $userDiscount = getUserDiscount();
             <div class="container">
                 <div class="header-content">
                     <div class="logo">
-                        <a href="index.php"><h1><i class="fas fa-leaf"></i> USI Floral Imports</h1></a>
+                        <a href="index.php"><h1><i class="fas fa-leaf"></i> Floral Collection</h1></a>
                     </div>
                     
                     <nav class="main-nav">
@@ -112,7 +146,6 @@ $userDiscount = getUserDiscount();
                     </nav>
                     
                     <div class="header-actions">
-                        <a href="login.php" class="btn btn-login">Log In</a>
                         <i class="fas fa-search search-icon"></i>
                     </div>
                 </div>
@@ -142,26 +175,6 @@ $userDiscount = getUserDiscount();
         </div>
     </section>
 
-    <!-- Login Notice -->
-    <?php if (!$isLoggedIn): ?>
-    <section class="login-notice">
-        <div class="container">
-            <div class="notice-content">
-                <div class="notice-icon">
-                    <i class="fas fa-lock"></i>
-                </div>
-                <div class="notice-text">
-                    <h3>Prices Only for Registered Buyers</h3>
-                    <p>To view prices and place orders, <a href="login.php">log in</a> with your B2B account or <a href="registration.php">register</a> as a wholesale buyer.</p>
-                </div>
-                <div class="notice-actions">
-                    <a href="login.php" class="btn btn-primary">Log In</a>
-                    <a href="registration.php" class="btn btn-secondary">Register</a>
-                </div>
-            </div>
-        </div>
-    </section>
-    <?php endif; ?>
 
     <?php if (!empty($errorMessage)): ?>
     <section class="error-notice">
@@ -169,8 +182,11 @@ $userDiscount = getUserDiscount();
             <div class="alert alert-danger">
                 <i class="fas fa-exclamation-triangle"></i>
                 <div class="error-content">
-                    <h4>SQL Query Error</h4>
+                    <h4>Database Connection Issue</h4>
                     <pre><?php echo htmlspecialchars($errorMessage); ?></pre>
+                    <?php if (strpos($errorMessage, 'Database connection error') !== false): ?>
+                        <p><strong>Quick Fix:</strong> <a href="setup-database.php" style="color: #fff; text-decoration: underline;">Run Database Setup</a></p>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -279,9 +295,9 @@ $userDiscount = getUserDiscount();
                                      alt="<?php echo htmlspecialchars($product['name']); ?>"
                                      onerror="this.src='https://via.placeholder.com/400x300/e8f5e8/2d5a27?text=🌸+<?php echo urlencode($product['name']); ?>'">
                                 <div class="image-overlay">
-                                    <button class="btn btn-primary view-details" data-product-id="<?php echo $product['id']; ?>">
+                                    <a href="product-detail.php?id=<?php echo $product['id']; ?>" class="btn btn-primary view-details">
                                         <i class="fas fa-info-circle"></i> Technical Details
-                                    </button>
+                                    </a>
                                 </div>
                             </div>
                             
@@ -316,9 +332,9 @@ $userDiscount = getUserDiscount();
                                 </div>
                                 
                                 <div class="data-actions">
-                                    <button class="btn btn-info view-details" data-product-id="<?php echo $product['id']; ?>">
+                                    <a href="product-detail.php?id=<?php echo $product['id']; ?>" class="btn btn-info view-details">
                                         <i class="fas fa-info-circle"></i> View Details
-                                    </button>
+                                    </a>
                                 </div>
                             </div>
                         </div>
@@ -399,8 +415,8 @@ $userDiscount = getUserDiscount();
         <div class="container">
             <div class="footer-content">
                 <div class="footer-section">
-                    <h4>USI Floral Imports</h4>
-                    <p>The best deals in high-quality silk botanicals & event decor items for floral designers, bridal & event venues, party & home decorators, retailers, set producers, organizations and more.</p>
+                    <h4>Floral Collection</h4>
+                    <p>Explore our comprehensive database of premium silk botanicals and decorative flowers. Discover detailed information about various flower species, materials, and design specifications.</p>
                 </div>
                 
                 <div class="footer-section">
@@ -425,8 +441,8 @@ $userDiscount = getUserDiscount();
             </div>
             
             <div class="footer-bottom">
-                <p>&copy; 2025, USI Floral Imports</p>
-                <p>This site is tailored to support our B2B buyers. Questions? <a href="contact.php">Contact</a> us!</p>
+                <p>&copy; 2025, Floral Database Collection</p>
+                <p>Premium botanical information database for reference and educational purposes.</p>
             </div>
         </div>
     </footer>
@@ -511,12 +527,6 @@ $userDiscount = getUserDiscount();
             letter-spacing: 1px;
             opacity: 0.8;
             margin-top: 5px;
-        }
-        
-        .login-notice {
-            background-color: #fff3cd;
-            border-bottom: 3px solid #ffc107;
-            padding: 30px 0;
         }
         
         .error-notice {
@@ -1113,244 +1123,10 @@ $userDiscount = getUserDiscount();
     </style>
 
     <script>
-        // Funcionalidad específica de base de datos de flores
+        // Basic functionality for flower database interface
         document.addEventListener('DOMContentLoaded', function() {
-            
-            // Botones de ver detalles técnicos
-            const viewDetailsButtons = document.querySelectorAll('.view-details');
-            viewDetailsButtons.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const productId = this.dataset.productId;
-                    showTechnicalDetails(productId);
-                });
-            });
-            
-            // Función para mostrar detalles técnicos
-            function showTechnicalDetails(productId) {
-                const modal = document.createElement('div');
-                modal.className = 'modal-overlay';
-                modal.innerHTML = `
-                    <div class="modal-content technical-modal">
-                        <div class="modal-header">
-                            <h3><i class="fas fa-microscope"></i> Technical Analysis - ID: ${productId}</h3>
-                            <button class="modal-close">&times;</button>
-                        </div>
-                        <div class="modal-body">
-                            <div class="loading">Querying database...</div>
-                        </div>
-                    </div>
-                `;
-                
-                document.body.appendChild(modal);
-                
-                // Simular carga de datos técnicos
-                setTimeout(() => {
-                    modal.querySelector('.modal-body').innerHTML = `
-                        <div class="technical-data">
-                            <div class="data-section">
-                                <h4><i class="fas fa-database"></i> Database Information</h4>
-                                <div class="tech-grid">
-                                    <div class="tech-item">
-                                        <span class="tech-label">Record ID:</span>
-                                        <span class="tech-value">${productId}</span>
-                                    </div>
-                                    <div class="tech-item">
-                                        <span class="tech-label">Source Table:</span>
-                                        <span class="tech-value">products</span>
-                                    </div>
-                                    <div class="tech-item">
-                                        <span class="tech-label">Schema:</span>
-                                        <span class="tech-value">floral_database</span>
-                                    </div>
-                                    <div class="tech-item">
-                                        <span class="tech-label">Last Updated:</span>
-                                        <span class="tech-value">${new Date().toLocaleDateString()}</span>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="data-section">
-                                <h4><i class="fas fa-code"></i> SQL Query Used</h4>
-                                <pre class="sql-query">SELECT id, name, slug, description, short_description, 
-price, wholesale_price, min_quantity, min_quantity_unit, 
-stock_quantity, sku, image_url, featured, color, material, 
-'category' as category_name, 'slug' as category_slug 
-FROM products 
-WHERE id = ${productId}</pre>
-                            </div>
-                            
-                            <div class="data-section">
-                                <h4><i class="fas fa-code"></i> JSON Data</h4>
-                                <pre class="json-data">{
-  "id": ${productId},
-  "name": "Rosa Damascena Premium",
-  "slug": "rosa-damascena-premium",
-  "description": "High-quality specimen with exceptional botanical characteristics",
-  "short_description": "Premium collection rose",
-  "price": 45.99,
-  "wholesale_price": 32.00,
-  "min_quantity": 12,
-  "min_quantity_unit": "pieces",
-  "stock_quantity": 150,
-  "sku": "RDP-2024-${productId}",
-  "image_url": "https://example.com/images/rosa-${productId}.jpg",
-  "featured": true,
-  "color": "Crimson Red",
-  "material": "Premium Silk",
-  "category_name": "Rosaceae",
-  "category_slug": "rosaceae",
-  "metadata": {
-    "classification": "Scientific",
-    "verified": true,
-    "source": "Database Query",
-    "last_updated": "${new Date().toISOString()}"
-  }
-}</pre>
-                                <button class="btn btn-primary copy-json">
-                                    <i class="fas fa-copy"></i> Copy JSON
-                                </button>
-                            </div>
-                            
-                            <div class="data-section">
-                                <h4><i class="fas fa-chart-line"></i> Statistics</h4>
-                                <div class="stats-grid">
-                                    <div class="stat-box">
-                                        <span class="stat-number">1</span>
-                                        <span class="stat-label">Record Queried</span>
-                                    </div>
-                                    <div class="stat-box">
-                                        <span class="stat-number">14</span>
-                                        <span class="stat-label">Available Fields</span>
-                                    </div>
-                                    <div class="stat-box">
-                                        <span class="stat-number">0.003s</span>
-                                        <span class="stat-label">Query Time</span>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="data-section">
-                                <h4><i class="fas fa-download"></i> Export Options</h4>
-                                <div class="export-options">
-                                    <button class="btn btn-secondary export-csv" data-product-id="${productId}">
-                                        <i class="fas fa-file-csv"></i> Export CSV
-                                    </button>
-                                    <button class="btn btn-secondary export-json" data-product-id="${productId}">
-                                        <i class="fas fa-file-code"></i> Export JSON
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                }, 1000);
-                
-                // Add event listeners for the new buttons
-                setTimeout(() => {
-                    // Copy JSON functionality
-                    const copyJsonBtn = modal.querySelector('.copy-json');
-                    if (copyJsonBtn) {
-                        copyJsonBtn.addEventListener('click', function() {
-                            const jsonText = modal.querySelector('.json-data').textContent;
-                            navigator.clipboard.writeText(jsonText).then(() => {
-                                showNotification('JSON copied to clipboard', 'success');
-                            });
-                        });
-                    }
-                    
-                    // Export CSV functionality
-                    const exportCsvBtn = modal.querySelector('.export-csv');
-                    if (exportCsvBtn) {
-                        exportCsvBtn.addEventListener('click', function() {
-                            exportData(productId, 'csv');
-                        });
-                    }
-                    
-                    // Export JSON functionality
-                    const exportJsonBtn = modal.querySelector('.export-json');
-                    if (exportJsonBtn) {
-                        exportJsonBtn.addEventListener('click', function() {
-                            exportData(productId, 'json');
-                        });
-                    }
-                }, 1200);
-                
-                setupModalClose(modal);
-            }
-            
-            // Función para exportar datos
-            function exportData(productId, format = 'csv') {
-                showNotification(`Exporting data for record ID: ${productId} as ${format.toUpperCase()}`, 'info');
-                
-                // Simulate export
-                setTimeout(() => {
-                    let data, blob, filename;
-                    
-                    if (format === 'csv') {
-                        data = `ID,Name,Description,Color,Material,Stock
-${productId},"Rosa Damascena Premium","High-quality specimen with exceptional botanical characteristics","Crimson Red","Premium Silk",150`;
-                        blob = new Blob([data], { type: 'text/csv' });
-                        filename = `floral_data_${productId}.csv`;
-                    } else if (format === 'json') {
-                        data = JSON.stringify({
-                            id: productId,
-                            name: "Rosa Damascena Premium",
-                            description: "High-quality specimen with exceptional botanical characteristics",
-                            color: "Crimson Red",
-                            material: "Premium Silk",
-                            stock: 150,
-                            exported_at: new Date().toISOString()
-                        }, null, 2);
-                        blob = new Blob([data], { type: 'application/json' });
-                        filename = `floral_data_${productId}.json`;
-                    }
-                    
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = filename;
-                    a.click();
-                    window.URL.revokeObjectURL(url);
-                    
-                    showNotification(`${format.toUpperCase()} file downloaded successfully`, 'success');
-                }, 1500);
-            }
-            
-            // Función para configurar cierre de modal
-            function setupModalClose(modal) {
-                modal.querySelector('.modal-close').addEventListener('click', function() {
-                    document.body.removeChild(modal);
-                });
-                
-                modal.addEventListener('click', function(e) {
-                    if (e.target === modal) {
-                        document.body.removeChild(modal);
-                    }
-                });
-            }
-            
-            // Función para mostrar notificaciones
-            function showNotification(message, type = 'info') {
-                const notification = document.createElement('div');
-                notification.className = `notification notification-${type}`;
-                notification.innerHTML = `
-                    <div class="notification-content">
-                        <span>${message}</span>
-                        <button class="notification-close">&times;</button>
-                    </div>
-                `;
-                
-                document.body.appendChild(notification);
-                
-                setTimeout(() => {
-                    if (document.body.contains(notification)) {
-                        document.body.removeChild(notification);
-                    }
-                }, 5000);
-                
-                notification.querySelector('.notification-close').addEventListener('click', function() {
-                    document.body.removeChild(notification);
-                });
-            }
+            // Any additional interactive features can be added here
+            console.log('Flower Database Interface Loaded');
         });
     </script>
     
@@ -1382,107 +1158,6 @@ ${productId},"Rosa Damascena Premium","High-quality specimen with exceptional bo
             gap: 10px;
         }
         
-        .tech-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-        }
-        
-        .tech-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px;
-            background: #f8f9fa;
-            border-radius: 6px;
-        }
-        
-        .tech-label {
-            font-weight: 600;
-            color: #495057;
-        }
-        
-        .tech-value {
-            color: #2d5a27;
-            font-family: 'Courier New', monospace;
-        }
-        
-        .sql-query {
-            background: #1e1e1e;
-            color: #d4d4d4;
-            padding: 20px;
-            border-radius: 8px;
-            font-family: 'Courier New', monospace;
-            font-size: 12px;
-            line-height: 1.5;
-            overflow-x: auto;
-            border: 1px solid #333;
-        }
-        
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-        }
-        
-        .stat-box {
-            text-align: center;
-            padding: 20px;
-            background: linear-gradient(135deg, #e8f5e8 0%, #d4edda 100%);
-            border-radius: 8px;
-            border: 1px solid #c3e6cb;
-        }
-        
-        .stat-box .stat-number {
-            display: block;
-            font-size: 24px;
-            font-weight: 700;
-            color: #2d5a27;
-            margin-bottom: 5px;
-        }
-        
-        .stat-box .stat-label {
-            font-size: 12px;
-            color: #495057;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        
-        .json-container {
-            position: relative;
-        }
-        
-        .json-data {
-            background: #2d3748;
-            color: #e2e8f0;
-            padding: 20px;
-            border-radius: 8px;
-            font-family: 'Courier New', monospace;
-            font-size: 12px;
-            line-height: 1.6;
-            overflow-x: auto;
-            max-height: 400px;
-            overflow-y: auto;
-            border: 1px solid #4a5568;
-            margin-bottom: 15px;
-        }
-        
-        .copy-json {
-            position: sticky;
-            bottom: 0;
-            width: 100%;
-        }
-        
-        .export-options {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-        }
-        
-        .export-options .btn {
-            flex: 1;
-            max-width: 200px;
-        }
-        
         @media (max-width: 768px) {
             .hero-stats {
                 flex-direction: column;
@@ -1491,84 +1166,6 @@ ${productId},"Rosa Damascena Premium","High-quality specimen with exceptional bo
             
             .data-grid {
                 grid-template-columns: 1fr;
-            }
-            
-            .tech-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .technical-modal, .json-modal {
-                max-width: 95vw;
-                margin: 10px;
-            }
-        }
-        
-        /* Estilos para notificaciones */
-        .notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 10001;
-            border-radius: 5px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-            min-width: 300px;
-        }
-        
-        .notification-success {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        
-        .notification-error {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-        
-        .notification-info {
-            background-color: #d1ecf1;
-            color: #0c5460;
-            border: 1px solid #bee5eb;
-        }
-        
-        .notification-content {
-            padding: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .notification-close {
-            background: none;
-            border: none;
-            font-size: 18px;
-            cursor: pointer;
-            opacity: 0.7;
-        }
-        
-        .notification-close:hover {
-            opacity: 1;
-        }
-        
-        @media (max-width: 768px) {
-            .product-quick-view {
-                grid-template-columns: 1fr;
-            }
-            
-            .modal-content {
-                margin: 10px;
-                max-height: calc(100vh - 20px);
-            }
-            
-            .notification {
-                right: 10px;
-                left: 10px;
-                min-width: auto;
             }
         }
     </style>

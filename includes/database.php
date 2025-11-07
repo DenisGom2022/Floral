@@ -227,6 +227,30 @@ class ProductManager {
             return 0;
         }
     }
+    
+    /**
+     * Obtener productos con información de categoría (reemplaza vista products_with_category)
+     */
+    public function getProductsWithCategory($limit = null, $categoryId = null, $searchTerm = null) {
+        try {
+            return getProductsWithCategory($this->db, $limit, $categoryId, $searchTerm);
+        } catch (Exception $e) {
+            error_log("Get Products With Category Error: " . $e->getMessage());
+            return [];
+        }
+    }
+    
+    /**
+     * Obtener un producto específico con información de categoría
+     */
+    public function getProductWithCategory($productId) {
+        try {
+            return getProductWithCategory($this->db, $productId);
+        } catch (Exception $e) {
+            error_log("Get Product With Category Error: " . $e->getMessage());
+            return null;
+        }
+    }
 }
 
 // Clase para manejar categorías
@@ -259,6 +283,18 @@ class CategoryManager {
         
         return $stmt->fetch();
     }
+    
+    /**
+     * Obtener estadísticas de productos por categoría (reemplaza vista product_stats)
+     */
+    public function getProductStats() {
+        try {
+            return getProductStats($this->db);
+        } catch (Exception $e) {
+            error_log("Get Product Stats Error: " . $e->getMessage());
+            return [];
+        }
+    }
 }
 
 // Funciones de utilidad para formateo
@@ -274,12 +310,84 @@ function formatMinQuantity($quantity, $unit) {
     return $quantity . ' ' . $unit;
 }
 
-function isUserLoggedIn() {
-    return isset($_SESSION['user_logged_in']) && $_SESSION['user_logged_in'] === true;
+// Función para obtener productos con información de categoría (reemplaza la vista products_with_category)
+function getProductsWithCategory($pdo, $limit = null, $categoryId = null, $searchTerm = null) {
+    $sql = "SELECT 
+                p.*,
+                c.name as category_name,
+                c.slug as category_slug
+            FROM products p
+            JOIN categories c ON p.category_id = c.id
+            WHERE p.active = TRUE AND c.active = TRUE";
+    
+    $params = [];
+    
+    if ($categoryId && $categoryId !== 'all') {
+        $sql .= " AND p.category_id = :category_id";
+        $params[':category_id'] = $categoryId;
+    }
+    
+    if ($searchTerm) {
+        $sql .= " AND (p.name LIKE :search OR p.description LIKE :search OR p.short_description LIKE :search)";
+        $params[':search'] = '%' . $searchTerm . '%';
+    }
+    
+    $sql .= " ORDER BY p.name";
+    
+    if ($limit) {
+        $sql .= " LIMIT :limit";
+        $params[':limit'] = $limit;
+    }
+    
+    $stmt = $pdo->prepare($sql);
+    
+    // Bind parameters with correct types
+    foreach ($params as $key => $value) {
+        if ($key === ':limit') {
+            $stmt->bindValue($key, $value, PDO::PARAM_INT);
+        } else {
+            $stmt->bindValue($key, $value, PDO::PARAM_STR);
+        }
+    }
+    
+    $stmt->execute();
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
-function getUserDiscount() {
-    return $_SESSION['user_discount'] ?? 0;
+// Función para obtener estadísticas de productos (reemplaza la vista product_stats)
+function getProductStats($pdo) {
+    $sql = "SELECT 
+                c.name as category_name,
+                COUNT(p.id) as total_products,
+                COALESCE(AVG(p.price), 0) as avg_price,
+                COALESCE(MIN(p.price), 0) as min_price,
+                COALESCE(MAX(p.price), 0) as max_price,
+                COALESCE(SUM(p.stock_quantity), 0) as total_stock
+            FROM categories c
+            LEFT JOIN products p ON c.id = p.category_id AND p.active = TRUE
+            WHERE c.active = TRUE
+            GROUP BY c.id, c.name
+            ORDER BY c.name";
+    
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute();
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+// Función para obtener un producto específico con información de categoría
+function getProductWithCategory($pdo, $productId) {
+    $sql = "SELECT 
+                p.*,
+                c.name as category_name,
+                c.slug as category_slug
+            FROM products p
+            JOIN categories c ON p.category_id = c.id
+            WHERE p.id = :product_id AND p.active = TRUE AND c.active = TRUE";
+    
+    $stmt = $pdo->prepare($sql);
+    $stmt->bindValue(':product_id', $productId, PDO::PARAM_INT);
+    $stmt->execute();
+    return $stmt->fetch(PDO::FETCH_ASSOC);
 }
 
 // Función para manejo de errores de base de datos
