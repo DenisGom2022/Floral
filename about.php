@@ -520,6 +520,8 @@ body {
                             <div class="section-content">
                                 <p>Hello! I'm <strong>Luis</strong>, and I've developed this application with lots of love and dedication. As someone who absolutely loves flowers and nature, I decided to combine my passion for programming with my love for the floral world.</p>
                                 
+                                <p>This project draws inspiration from the beautiful floral diversity found across <strong>the United States</strong>, from the wildflowers of California to the roses of Oregon and the native species of the Great Plains. The rich botanical heritage of America serves as a constant source of inspiration for this collection.</p>
+                                
                                 <p>Flowers have always been a source of inspiration for me. Their beauty, diversity, and the way they can brighten up any space fascinates me enormously. Every time I see a flower, I can't help but admire the unique details that make it special.</p>
                                 
                                 <div class="passion-points">
