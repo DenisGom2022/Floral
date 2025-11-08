@@ -1113,7 +1113,7 @@ body {
                             type="text" 
                             name="search" 
                             class="search-input" 
-                            placeholder="Search for flowers... (Try: rose, tulip, or even SQL injection: ' OR 1=1 --)" 
+                            placeholder="Search for flowers..." 
                             value="<?php echo htmlspecialchars($searchTerm); ?>"
                         >
                         <button type="submit" class="search-btn">
@@ -1134,7 +1134,7 @@ body {
             <?php if (!empty($searchTerm)): ?>
                 <div class="search-results-info">
                     <i class="fas fa-info-circle"></i>
-                    Search results for: "<strong><?php echo htmlspecialchars($searchTerm); ?></strong>" 
+                    Search results for: "<strong><?php echo $searchTerm; ?></strong>" 
                     (<?php echo count($flowers); ?> results found)
                 </div>
             <?php endif; ?>
